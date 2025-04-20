@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -64,13 +63,32 @@ export default function SongForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      // Format the duration to a valid time format (HH:MM:SS)
+      // Convert minutes to proper time format
+      let formattedDuration = values.duration;
+      
+      // Check if duration contains a decimal point (e.g., 5.30)
+      if (values.duration.includes('.')) {
+        const [minutes, seconds] = values.duration.split('.');
+        // Pad seconds if needed and ensure it's valid
+        const paddedSeconds = seconds.length === 1 ? seconds + '0' : seconds;
+        formattedDuration = `00:${minutes.padStart(2, '0')}:${paddedSeconds.padStart(2, '0')}`;
+      } 
+      // Check if duration is just a number (e.g., "5")
+      else if (!values.duration.includes(':')) {
+        formattedDuration = `00:${values.duration.padStart(2, '0')}:00`;
+      }
+      // If it's already in HH:MM:SS or MM:SS format, keep it as is
+      
+      console.log("Formatted duration:", formattedDuration);
+
       const { error } = await supabase
         .from('Song')
         .insert([{
           Song_Title: values.song_title,
           "Movie/Album Name": values.movie_album_name,
           Price: parseFloat(values.price),
-          Duration: values.duration,
+          Duration: formattedDuration,
           Category: values.category,
           Size_MB: parseFloat(values.size),
           Singer_ID: parseInt(values.singer_id),
@@ -145,9 +163,11 @@ export default function SongForm() {
                   <FormItem>
                     <FormLabel>Duration (minutes)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="Enter duration" {...field} className="bg-[#2A2F3C] border-purple-800/20" />
+                      <Input placeholder="Enter as MM:SS" {...field} className="bg-[#2A2F3C] border-purple-800/20" />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs">
+                      Format as MM:SS (e.g., 03:45) or minutes (e.g., 3.5)
+                    </FormMessage>
                   </FormItem>
                 )}
               />
