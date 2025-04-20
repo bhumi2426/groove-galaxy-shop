@@ -1,6 +1,7 @@
 
-import { Music2, ShoppingCart } from "lucide-react";
+import { Music2, ShoppingCart, User, FileMusic, Mic2, Mail } from "lucide-react";
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 
 export function Navigation() {
   return (
@@ -8,25 +9,42 @@ export function Navigation() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Music2 className="w-8 h-8 text-[#9b87f5]" />
-          <span className="text-xl font-semibold bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA] text-transparent bg-clip-text">
+          <Link to="/" className="text-xl font-semibold bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA] text-transparent bg-clip-text">
             Groove Galaxy
-          </span>
+          </Link>
         </div>
         
-        <div className="flex items-center space-x-6">
-          <Button variant="ghost" className="text-gray-300 hover:text-white">
-            Discover
-          </Button>
-          <Button variant="ghost" className="text-gray-300 hover:text-white">
-            Library
-          </Button>
-          <Button variant="ghost" className="text-gray-300 hover:text-white">
-            Playlists
-          </Button>
-          <Button variant="outline" className="border-purple-500/50 hover:border-purple-500">
-            <ShoppingCart className="w-5 h-5" />
-            <span className="ml-2">Cart (0)</span>
-          </Button>
+        <div className="flex items-center space-x-4">
+          <Link to="/composer">
+            <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <FileMusic className="w-4 h-4 mr-2" />
+              Composers
+            </Button>
+          </Link>
+          <Link to="/singer">
+            <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <Mic2 className="w-4 h-4 mr-2" />
+              Singers
+            </Button>
+          </Link>
+          <Link to="/song">
+            <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <Music2 className="w-4 h-4 mr-2" />
+              Songs
+            </Button>
+          </Link>
+          <Link to="/customer">
+            <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <User className="w-4 h-4 mr-2" />
+              Customers
+            </Button>
+          </Link>
+          <Link to="/purchase">
+            <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Purchase
+            </Button>
+          </Link>
         </div>
       </div>
     </nav>
