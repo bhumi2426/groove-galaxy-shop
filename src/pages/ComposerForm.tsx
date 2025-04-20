@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   composer_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -15,6 +17,7 @@ const formSchema = z.object({
 });
 
 export default function ComposerForm() {
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -24,9 +27,25 @@ export default function ComposerForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast.success("Composer details submitted successfully!");
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { error } = await supabase
+        .from('Composer')
+        .insert([{
+          composer_name: values.composer_name,
+          contact_no: values.contact_no,
+          address: values.address,
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Composer details submitted successfully!");
+      form.reset();
+      navigate('/');
+    } catch (error) {
+      console.error('Error inserting composer:', error);
+      toast.error("Failed to submit composer details. Please try again.");
+    }
   }
 
   return (
