@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -15,6 +17,7 @@ const formSchema = z.object({
 });
 
 export default function CustomerForm() {
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -24,9 +27,25 @@ export default function CustomerForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast.success("Customer details submitted successfully!");
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { error } = await supabase
+        .from('Customer')
+        .insert([{
+          customer_name: values.customer_name,
+          customer_no: values.customer_no,
+          customer_address: values.customer_address,
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Customer details submitted successfully!");
+      form.reset();
+      navigate('/');
+    } catch (error) {
+      console.error('Error inserting customer:', error);
+      toast.error("Failed to submit customer details. Please try again.");
+    }
   }
 
   return (

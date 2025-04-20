@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const formSchema = z.object({
   song_title: z.string().min(2, "Title must be at least 2 characters"),
@@ -20,6 +23,31 @@ const formSchema = z.object({
 });
 
 export default function SongForm() {
+  const navigate = useNavigate();
+
+  // Fetch singers and composers for the dropdowns
+  const { data: singers = [] } = useQuery({
+    queryKey: ['singers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Singer')
+        .select('Singer_id, Singer_Name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: composers = [] } = useQuery({
+    queryKey: ['composers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Composer')
+        .select('composer_id, composer_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,9 +62,30 @@ export default function SongForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast.success("Song details submitted successfully!");
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { error } = await supabase
+        .from('Song')
+        .insert([{
+          Song_Title: values.song_title,
+          "Movie/Album Name": values.movie_album_name,
+          Price: parseFloat(values.price),
+          Duration: values.duration,
+          Category: values.category,
+          Size_MB: parseFloat(values.size),
+          Singer_ID: parseInt(values.singer_id),
+          Composer_ID: parseInt(values.composer_id),
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Song details submitted successfully!");
+      form.reset();
+      navigate('/');
+    } catch (error) {
+      console.error('Error inserting song:', error);
+      toast.error("Failed to submit song details. Please try again.");
+    }
   }
 
   return (
@@ -156,8 +205,11 @@ export default function SongForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="1">Singer 1</SelectItem>
-                        <SelectItem value="2">Singer 2</SelectItem>
+                        {singers.map((singer) => (
+                          <SelectItem key={singer.Singer_id} value={singer.Singer_id.toString()}>
+                            {singer.Singer_Name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -178,8 +230,11 @@ export default function SongForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="1">Composer 1</SelectItem>
-                        <SelectItem value="2">Composer 2</SelectItem>
+                        {composers.map((composer) => (
+                          <SelectItem key={composer.composer_id} value={composer.composer_id.toString()}>
+                            {composer.composer_name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

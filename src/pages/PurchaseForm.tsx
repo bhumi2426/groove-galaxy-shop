@@ -6,6 +6,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const formSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
@@ -14,6 +17,31 @@ const formSchema = z.object({
 });
 
 export default function PurchaseForm() {
+  const navigate = useNavigate();
+
+  // Fetch customers and songs for the dropdowns
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Customer')
+        .select('customer_id, customer_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: songs = [] } = useQuery({
+    queryKey: ['songs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Song')
+        .select('Song_ID, Song_Title');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -23,9 +51,25 @@ export default function PurchaseForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast.success("Purchase completed successfully!");
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { error } = await supabase
+        .from('Purchase')
+        .insert([{
+          customer_id: parseInt(values.customer_id),
+          song_id: parseInt(values.song_id),
+          purchase_date: values.purchase_date,
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Purchase completed successfully!");
+      form.reset();
+      navigate('/');
+    } catch (error) {
+      console.error('Error creating purchase:', error);
+      toast.error("Failed to complete purchase. Please try again.");
+    }
   }
 
   return (
@@ -48,8 +92,11 @@ export default function PurchaseForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1">Customer 1</SelectItem>
-                      <SelectItem value="2">Customer 2</SelectItem>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.customer_id} value={customer.customer_id.toString()}>
+                          {customer.customer_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -70,8 +117,11 @@ export default function PurchaseForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1">Song 1</SelectItem>
-                      <SelectItem value="2">Song 2</SelectItem>
+                      {songs.map((song) => (
+                        <SelectItem key={song.Song_ID} value={song.Song_ID.toString()}>
+                          {song.Song_Title}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
